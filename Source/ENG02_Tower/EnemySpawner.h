@@ -13,15 +13,43 @@ public:
 protected:
 	virtual void BeginPlay() override;
 public:
-	// The path this spawner gives to the enemies
 	UPROPERTY(EditAnywhere, Category = "Spawner Settings")
 	TArray<AActor*> SpawnerPath;
 
-	// What enemy to spawn
 	UPROPERTY(EditAnywhere, Category = "Spawner Settings")
 	TSubclassOf<ATowerEnemyBase> EnemyClassToSpawn;
 
-	void SpawnEnemy();
+	// Configuarable balancing in details panel 
+	// spawn delay and enemy speed can be randomized between the min and max values for each spawn
+	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
+	float MinSpawnDelay = 2.0f;
 
+	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
+	float MaxSpawnDelay = 5.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
+	float MinEnemySpeed = 100.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
+	float MaxEnemySpeed = 300.0f;
+	// ------------------------------
+
+	// POOLING
+	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Pooling")
+	int32 InitialPoolSize = 20;
+
+	UPROPERTY()
+	TArray<ATowerEnemyBase*> EnemyPool;
+
+	void InitializePool();
+	ATowerEnemyBase* GetEnemyFromPool();
+	void SpawnEnemy();
 	FTimerHandle SpawnTimerHandle;
+
+	// EVENT LISTENERS
+	UFUNCTION()
+	void HandleEnemyReachedBase(float Damage, ATowerEnemyBase* Enemy);
+
+	UFUNCTION()
+	void HandleEnemyDied(ATowerEnemyBase* Enemy);
 };

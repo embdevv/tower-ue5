@@ -1,5 +1,7 @@
 #include "TargetWaypoint.h"
 
+
+// Sets default values
 ATargetWaypoint::ATargetWaypoint()
 {
 	PrimaryActorTick.bCanEverTick = false;

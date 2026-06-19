@@ -10,11 +10,14 @@ class ENG02_TOWER_API ATargetWaypoint : public AActor
 public:
 	ATargetWaypoint();
 
-	// visual component so you can see it in the editor
 	UPROPERTY(VisibleAnywhere, Category = "Waypoint Settings")
 	class USceneComponent* Root;
 
-	// Check this box in the Editor if this waypoint is an EXIT door
+	// Teleports the enemy to the next node
 	UPROPERTY(EditAnywhere, Category = "Waypoint Settings")
 	bool bIsTeleportNode = false;
+
+	// Check this ONLY for the very last waypoint aka lose condition (we die or hella damage)
+	UPROPERTY(EditAnywhere, Category = "Waypoint Settings")
+	bool bIsFinalWaypoint = false;
 };
