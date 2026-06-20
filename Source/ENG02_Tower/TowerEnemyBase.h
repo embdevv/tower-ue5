@@ -3,7 +3,6 @@
 #include "GameFramework/Actor.h"
 #include "TowerEnemyBase.generated.h"
 
-// MINI EVENT BUS DELEGATES
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEnemyReachedBaseSignature, float, DamageAmount, ATowerEnemyBase*, Enemy);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDiedSignature, ATowerEnemyBase*, Enemy);
 
@@ -15,7 +14,7 @@ public:
 	ATowerEnemyBase();
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditAnywhere, Category = "Enemy Visuals")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy Visuals")
 	class UStaticMeshComponent* EnemyMesh;
 
 	UPROPERTY(EditAnywhere, Category = "Enemy Visuals")
@@ -38,20 +37,17 @@ public:
 	TArray<AActor*> PathToFollow;
 	int32 CurrentTargetIndex = 0;
 
-	// EVENT PUBLISHERS
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnEnemyReachedBaseSignature OnEnemyReachedBase;
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnEnemyDiedSignature OnEnemyDied;
 
-	// POOLING CONTROLS
 	bool bIsActive = false;
 	void ActivateEnemy(FVector SpawnLocation, TArray<AActor*> AssignedPath, float RandomSpeed);
 	void DeactivateEnemy();
 	void TakeDamage(float Damage);
 
-	// TIMERS
 	FTimerHandle FlashTimerHandle;
 	void TriggerBaseReached();
 	void FinishBaseReached();
