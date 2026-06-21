@@ -1,85 +1,84 @@
 #include "EnemySpawner.h"
-#include "Engine/World.h"
-#include "Engine/Engine.h"
 #include "TimerManager.h"
+#include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 
 AEnemySpawner::AEnemySpawner()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void AEnemySpawner::BeginPlay()
 {
 	Super::BeginPlay();
-	InitializePool();
-	GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AEnemySpawner::SpawnEnemy, MinSpawnDelay, false);
-}
 
-void AEnemySpawner::InitializePool()
-{
-	if (!EnemyClassToSpawn) return;
-
-	for (int i = 0; i < InitialPoolSize; i++)
+	if (EnemyToSpawn)
 	{
-		ATowerEnemyBase* NewEnemy = GetWorld()->SpawnActor<ATowerEnemyBase>(EnemyClassToSpawn, FVector::ZeroVector, FRotator::ZeroRotator);
-
-		if (NewEnemy)
+		for (int32 i = 0; i < PoolSize; i++)
 		{
-			NewEnemy->OnEnemyReachedBase.AddDynamic(this, &AEnemySpawner::HandleEnemyReachedBase);
-			NewEnemy->OnEnemyDied.AddDynamic(this, &AEnemySpawner::HandleEnemyDied);
-			NewEnemy->DeactivateEnemy();
-			EnemyPool.Add(NewEnemy);
+			ATowerEnemyBase* NewEnemy = GetWorld()->SpawnActor<ATowerEnemyBase>(EnemyToSpawn, FVector::ZeroVector, FRotator::ZeroRotator);
+			if (NewEnemy)
+			{
+				NewEnemy->DeactivateEnemy();
+				NewEnemy->OnEnemyReachedBase.AddDynamic(this, &AEnemySpawner::HandleEnemyReachedBase);
+
+				// Binding the new 2-parameter event
+				NewEnemy->OnEnemyDied.AddDynamic(this, &AEnemySpawner::HandleEnemyDied);
+
+				EnemyPool.Add(NewEnemy);
+			}
 		}
 	}
+
+	GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AEnemySpawner::SpawnEnemy, SpawnInterval, true);
 }
 
-ATowerEnemyBase* AEnemySpawner::GetEnemyFromPool()
+void AEnemySpawner::Tick(float DeltaTime)
 {
-	for (ATowerEnemyBase* Enemy : EnemyPool)
-	{
-		if (!Enemy->bIsActive) return Enemy;
-	}
-	return nullptr;
+	Super::Tick(DeltaTime);
 }
 
 void AEnemySpawner::SpawnEnemy()
 {
-	// LIVE TRACKER
-	int32 ActiveCount = 0;
-	for (ATowerEnemyBase* E : EnemyPool)
+	for (ATowerEnemyBase* Enemy : EnemyPool)
 	{
-		if (E->bIsActive) ActiveCount++;
+		if (!Enemy->bIsActive)
+		{
+			float RandomSpeed = FMath::RandRange(100.0f, 250.0f);
+			Enemy->ActivateEnemy(GetActorLocation(), WaypointPath, RandomSpeed);
+			return;
+		}
 	}
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Active Enemies: %d / %d"), ActiveCount, InitialPoolSize));
-	}
-
-	ATowerEnemyBase* PooledEnemy = GetEnemyFromPool();
-	if (PooledEnemy)
-	{
-		// custom speed variables
-		float RandomSpeed = FMath::RandRange(MinEnemySpeed, MaxEnemySpeed);
-		PooledEnemy->ActivateEnemy(GetActorLocation(), SpawnerPath, RandomSpeed);
-	}
-
-	float NextSpawnTime = FMath::RandRange(MinSpawnDelay, MaxSpawnDelay);
-	GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AEnemySpawner::SpawnEnemy, NextSpawnTime, false);
+	UE_LOG(LogTemp, Warning, TEXT("Enemy Pool is empty. Consider increasing PoolSize."));
 }
 
 void AEnemySpawner::HandleEnemyReachedBase(float Damage, ATowerEnemyBase* Enemy)
 {
-	// Prints to screen
-	if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, FString::Printf(TEXT("Base took %f damage!"), Damage)); }
-
-	// Prints to Output Log
 	UE_LOG(LogTemp, Warning, TEXT("EVENT TRIGGERED: Base took %f damage"), Damage);
-
-	Enemy->DeactivateEnemy(); // Recycle
+	Enemy->DeactivateEnemy();
 }
 
-void AEnemySpawner::HandleEnemyDied(ATowerEnemyBase* Enemy)
+void AEnemySpawner::HandleEnemyDied(ATowerEnemyBase* Enemy, FVector DeathLocation)
 {
 	UE_LOG(LogTemp, Warning, TEXT("EVENT TRIGGERED: Enemy was killed by defender!"));
-	Enemy->DeactivateEnemy(); // Recycle
+	Enemy->DeactivateEnemy(); // Recycle back to the pool
+
+	// The Floating Coin UI Logic
+	if (CoinWidgetClass)
+	{
+		UUserWidget* CoinPopup = CreateWidget<UUserWidget>(GetWorld(), CoinWidgetClass);
+		if (CoinPopup)
+		{
+			CoinPopup->AddToViewport();
+
+			APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+			FVector2D ScreenPos;
+
+			// Convert the 3D death location to 2D screen coordinates
+			if (PC && PC->ProjectWorldLocationToScreen(DeathLocation, ScreenPos))
+			{
+				CoinPopup->SetPositionInViewport(ScreenPos);
+			}
+		}
+	}
 }

@@ -1,55 +1,53 @@
 #pragma once
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TowerEnemyBase.h"
 #include "EnemySpawner.generated.h"
 
+// Forward declaration for the UI Widget
+class UUserWidget;
+
 UCLASS()
 class ENG02_TOWER_API AEnemySpawner : public AActor
 {
 	GENERATED_BODY()
+
 public:
 	AEnemySpawner();
+	virtual void Tick(float DeltaTime) override;
+
 protected:
 	virtual void BeginPlay() override;
+
 public:
-	UPROPERTY(EditAnywhere, Category = "Spawner Settings")
-	TArray<AActor*> SpawnerPath;
+	// The type of enemy to spawn
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TSubclassOf<ATowerEnemyBase> EnemyToSpawn;
 
-	UPROPERTY(EditAnywhere, Category = "Spawner Settings")
-	TSubclassOf<ATowerEnemyBase> EnemyClassToSpawn;
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	TArray<AActor*> WaypointPath;
 
-	// Configuarable balancing in details panel 
-	// spawn delay and enemy speed can be randomized between the min and max values for each spawn
-	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
-	float MinSpawnDelay = 2.0f;
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	int32 PoolSize = 10;
 
-	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
-	float MaxSpawnDelay = 5.0f;
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	float SpawnInterval = 2.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
-	float MinEnemySpeed = 100.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Balancing")
-	float MaxEnemySpeed = 300.0f;
-	// ------------------------------
-
-	// POOLING
-	UPROPERTY(EditAnywhere, Category = "Spawner Settings|Pooling")
-	int32 InitialPoolSize = 20;
-
-	UPROPERTY()
 	TArray<ATowerEnemyBase*> EnemyPool;
 
-	void InitializePool();
-	ATowerEnemyBase* GetEnemyFromPool();
 	void SpawnEnemy();
-	FTimerHandle SpawnTimerHandle;
 
-	// EVENT LISTENERS
 	UFUNCTION()
 	void HandleEnemyReachedBase(float Damage, ATowerEnemyBase* Enemy);
 
+	
 	UFUNCTION()
-	void HandleEnemyDied(ATowerEnemyBase* Enemy);
+	void HandleEnemyDied(ATowerEnemyBase* Enemy, FVector DeathLocation);
+
+	FTimerHandle SpawnTimerHandle;
+
+	// The slot for your UI Blueprint
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> CoinWidgetClass;
 };
