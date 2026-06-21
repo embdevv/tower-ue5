@@ -60,7 +60,12 @@ void AEnemySpawner::HandleEnemyReachedBase(float Damage, ATowerEnemyBase* Enemy)
 	if (GM)
 	{
 		//Deal the damage
+		UE_LOG(LogTemp, Warning, TEXT("Cast succeeded, dealing damage"));
 		GM->TakePlayerDamage(Damage);
+	}
+	else 
+	{
+		UE_LOG(LogTemp, Error, TEXT("Cast to TowerGameMode FAILED"));
 	}
 
 	//Recycle the enemy
