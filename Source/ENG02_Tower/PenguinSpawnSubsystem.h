@@ -2,6 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "PenguinBase.h"
 #include "PenguinSpawnSubsystem.generated.h"
 
 class APenguinBase;

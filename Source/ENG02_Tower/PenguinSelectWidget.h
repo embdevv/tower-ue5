@@ -2,6 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "PenguinBase.h"
 #include "PenguinSelectWidget.generated.h"
 
 class APenguinSpawnPoint;

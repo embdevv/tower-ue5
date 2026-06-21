@@ -6,10 +6,11 @@ public class ENG02_Tower : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-   
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG" });
+        PublicDependencyModuleNames.AddRange(new string[] {
+            "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG"
+        });
 
-        // added this line to support raw UI systems underneath UMG
+        // Supports raw Slate UI underneath UMG
         PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
     }
 }
