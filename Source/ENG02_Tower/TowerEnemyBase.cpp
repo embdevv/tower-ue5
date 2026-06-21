@@ -2,7 +2,10 @@
 #include "TargetWaypoint.h" 
 #include "TimerManager.h"
 #include "Components/StaticMeshComponent.h"
-#include "TowerGameMode.h" //Includes the Bank system. switch to this for main scene when you want to see the coin updates in action
+#include "TowerGameMode.h" //includes the Bank system
+#include "Components/SphereComponent.h"
+#include "PenguinBase.h"
+#include "Engine/DamageEvents.h"
 
 // Sets default values
 ATowerEnemyBase::ATowerEnemyBase()
@@ -10,6 +13,12 @@ ATowerEnemyBase::ATowerEnemyBase()
 	PrimaryActorTick.bCanEverTick = true;
 	EnemyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EnemyMesh"));
 	RootComponent = EnemyMesh;
+
+	//hitbox setup
+	AttackCollision = CreateDefaultSubobject<USphereComponent>(TEXT("AttackCollision"));
+	AttackCollision->SetupAttachment(RootComponent);
+	AttackCollision->SetSphereRadius(60.0f); // zombie reach
+	AttackCollision->OnComponentBeginOverlap.AddDynamic(this, &ATowerEnemyBase::OnAttackOverlapBegin);
 }
 
 // initializes the enemy with the given parameters and activates it in the world
@@ -20,6 +29,10 @@ void ATowerEnemyBase::ActivateEnemy(FVector SpawnLocation, TArray<AActor*> Assig
 	MoveSpeed = RandomSpeed;
 	CurrentHealth = Health;
 	CurrentTargetIndex = 0;
+
+	// forget previous penguin target and reset the attack timer
+	CurrentDefenderTarget = nullptr;
+	AttackTimer = 0.0f;
 
 	if (NormalMaterial) { EnemyMesh->SetMaterial(0, NormalMaterial); }
 
@@ -33,12 +46,13 @@ void ATowerEnemyBase::ActivateEnemy(FVector SpawnLocation, TArray<AActor*> Assig
 void ATowerEnemyBase::DeactivateEnemy()
 {
 	bIsActive = false;
+	CurrentDefenderTarget = nullptr; // Clean up memory
+
 	SetActorHiddenInGame(true);
 	SetActorTickEnabled(false);
 	SetActorEnableCollision(false);
 }
 
-// called by towers when they attack the enemy, applying damage and checking for death
 void ATowerEnemyBase::TakeDamage(float Damage)
 {
 	if (!bIsActive) return;
@@ -46,7 +60,7 @@ void ATowerEnemyBase::TakeDamage(float Damage)
 	CurrentHealth -= Damage;
 	if (CurrentHealth <= 0)
 	{
-		// Talk to  Bank
+		// Talk to the Bank
 		ATowerGameMode* GM = Cast<ATowerGameMode>(GetWorld()->GetAuthGameMode());
 		if (GM)
 		{
@@ -61,12 +75,38 @@ void ATowerEnemyBase::TakeDamage(float Damage)
 	}
 }
 
-// handles the enemy's movement along the assigned path and checks for reaching waypoints or the final destination
 void ATowerEnemyBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	if (!bIsActive) return;
+
+	// 
+	// COMBAT STATE: when blocked by penguin
+
+	// IsValid() returns false if penguin isnt there anymore aka died
+	if (IsValid(CurrentDefenderTarget))
+	{
+		AttackTimer += DeltaTime;
+		if (AttackTimer >= AttackCooldown)
+		{
+			AttackTimer = 0.0f; // Reset the swing timer
+
+			UE_LOG(LogTemp, Warning, TEXT("Zombie throws a punch! Dealing %f damage to the penguin!"), DamageAmount);
+
+			// attack penguin
+			CurrentDefenderTarget->TakeDamage(DamageAmount, FDamageEvent(), nullptr, this);
+		}
+
+		// to stop enemy from moving while fighting. skip movement code below
+		return;
+	}
+	else
+	{
+		// Clean up the memory pointer just in case the penguin died
+		CurrentDefenderTarget = nullptr;
+	}
+
 
 	if (PathToFollow.Num() > 0 && CurrentTargetIndex < PathToFollow.Num())
 	{
@@ -113,9 +153,26 @@ void ATowerEnemyBase::TriggerBaseReached()
 	GetWorld()->GetTimerManager().SetTimer(FlashTimerHandle, this, &ATowerEnemyBase::FinishBaseReached, 1.0f, false);
 }
 
-// finalizes the base reached event, broadcasting the damage to the base and resetting the enemy for reuse
+// finalizes
 void ATowerEnemyBase::FinishBaseReached()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Enemy Reached the Player! Dealt %f damage!"), DamageAmount);
+	UE_LOG(LogTemp, Warning, TEXT("Enemy Reached the Base! Dealt %f damage!"), DamageAmount);
 	OnEnemyReachedBase.Broadcast(DamageAmount, this);
+}
+
+// COMBAT OVERLAP FUNCTION
+void ATowerEnemyBase::OnAttackOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (!bIsActive) return;
+
+	// walked into penguin checker
+	APenguinBase* HitPenguin = Cast<APenguinBase>(OtherActor);
+
+	// If penguin and not fighting somehting else, lock on to it and start the attack timer
+	if (HitPenguin && !IsValid(CurrentDefenderTarget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Zombie bumped into a Penguin! Initiating combat lock-on."));
+		CurrentDefenderTarget = HitPenguin; // Lock on
+		AttackTimer = AttackCooldown; // Instantly trigger the first punch
+	}
 }
