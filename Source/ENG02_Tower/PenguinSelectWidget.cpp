@@ -1,4 +1,3 @@
-// PenguinSelectWidget.cpp
 #include "PenguinSelectWidget.h"
 #include "PenguinSpawnPoint.h"
 #include "PenguinSpawnSubsystem.h"
@@ -10,7 +9,7 @@ void UPenguinSelectWidget::Setup(APenguinSpawnPoint* InSpawnPoint)
 
 void UPenguinSelectWidget::TrySpawn(TSubclassOf<APenguinBase> PenguinClass)
 {
-    if (!TargetSpawnPoint) return;
+    if (!TargetSpawnPoint || !PenguinClass) return;
 
     UPenguinSpawnSubsystem* Subsystem = GetWorld()->GetSubsystem<UPenguinSpawnSubsystem>();
     bool bSuccess = Subsystem->TrySpawnPenguin(PenguinClass, TargetSpawnPoint);
