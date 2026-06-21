@@ -30,6 +30,9 @@ public:
     float AttackDamage = 0.f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Penguin|Attack")
+    float AttackSpeed = 1.f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Penguin|Attack")
     TSubclassOf<AActor> ProjectileClass;
 
     virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,

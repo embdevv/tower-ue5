@@ -6,7 +6,7 @@ APenguinBase::APenguinBase()
     Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
     RootComponent = Mesh;
 
-    bCanBeDamaged = true; // required — gates whether TakeDamage does anything
+    bCanBeDamaged = true;
 }
 
 void APenguinBase::BeginPlay()
