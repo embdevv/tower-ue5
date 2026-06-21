@@ -5,7 +5,7 @@
 #include "PenguinBase.generated.h"
 
 UCLASS(Blueprintable)
-class APenguinBase : public APawn
+class ENG02_TOWER_API APenguinBase : public APawn
 {
     GENERATED_BODY()
 public:
@@ -13,6 +13,10 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     class UStaticMeshComponent* Mesh;
+
+    // Universal Hitbox for all penguins
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    class USphereComponent* RangeSphere;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Penguin")
     int32 CoinCost = 1;
@@ -35,8 +39,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Penguin|Attack")
     TSubclassOf<AActor> ProjectileClass;
 
-    virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
-        class AController* EventInstigator, AActor* DamageCauser) override;
+    virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
     UFUNCTION(BlueprintImplementableEvent)
     void OnDamaged(float DamageAmount);
@@ -46,6 +49,18 @@ public:
 
     UFUNCTION(BlueprintImplementableEvent)
     void OnAttack(AActor* Target);
+
+    // Combat Logic
+    FTimerHandle AttackTimerHandle;
+    FTimerHandle BurstTimerHandle;
+
+    UPROPERTY()
+    class ATowerEnemyBase* CurrentTarget;
+
+    void PerformAttackCheck();
+
+    UFUNCTION()
+    void FireBurst();
 
 protected:
     virtual void BeginPlay() override;

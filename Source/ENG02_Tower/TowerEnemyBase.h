@@ -1,3 +1,4 @@
+// TowerEnemyBase.h
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -48,23 +49,20 @@ public:
 	void ActivateEnemy(FVector SpawnLocation, TArray<AActor*> AssignedPath, float RandomSpeed);
 	void DeactivateEnemy();
 
-	// Custom damage function for your towers to call
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void TakeDamage(float Damage);
+	void ReceiveDamage(float Damage);
 
 	FTimerHandle FlashTimerHandle;
 	void TriggerBaseReached();
 	void FinishBaseReached();
 
-	// COMBAT VARIABLES
-
 	// The Hitbox to detect penguins
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	class USphereComponent* AttackCollision;
 
-	// How fast the zombie hits the penguin (1.0 = 1 hit per second)
+	// The cooldown time between attacks
 	UPROPERTY(EditAnywhere, Category = "Enemy Stats")
-	float AttackCooldown = 1.0f;
+	float AttackCooldown = 2.5f;
 
 	float AttackTimer = 0.0f;
 
@@ -72,7 +70,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	class APenguinBase* CurrentDefenderTarget;
 
-	// The function that fires when we bump into something
 	UFUNCTION()
 	void OnAttackOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

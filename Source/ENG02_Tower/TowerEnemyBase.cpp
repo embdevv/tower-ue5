@@ -17,7 +17,7 @@ ATowerEnemyBase::ATowerEnemyBase()
 	//hitbox setup
 	AttackCollision = CreateDefaultSubobject<USphereComponent>(TEXT("AttackCollision"));
 	AttackCollision->SetupAttachment(RootComponent);
-	AttackCollision->SetSphereRadius(60.0f); // zombie reach
+	AttackCollision->SetSphereRadius(10.0f); // zombie reach
 	AttackCollision->OnComponentBeginOverlap.AddDynamic(this, &ATowerEnemyBase::OnAttackOverlapBegin);
 }
 
@@ -53,7 +53,7 @@ void ATowerEnemyBase::DeactivateEnemy()
 	SetActorEnableCollision(false);
 }
 
-void ATowerEnemyBase::TakeDamage(float Damage)
+void ATowerEnemyBase::ReceiveDamage(float Damage)
 {
 	if (!bIsActive) return;
 
@@ -107,7 +107,7 @@ void ATowerEnemyBase::Tick(float DeltaTime)
 		CurrentDefenderTarget = nullptr;
 	}
 
-
+	// MOVEMENT STATE: follow the path until we reach the base
 	if (PathToFollow.Num() > 0 && CurrentTargetIndex < PathToFollow.Num())
 	{
 		AActor* CurrentTarget = PathToFollow[CurrentTargetIndex];
@@ -165,14 +165,21 @@ void ATowerEnemyBase::OnAttackOverlapBegin(UPrimitiveComponent* OverlappedCompon
 {
 	if (!bIsActive) return;
 
-	// walked into penguin checker
+	// 1. SAFETY CHECK: If we hit a component tagged "DetectionOnly", ignore it.
+	// This stops the zombie from stopping just because it entered a penguin's firing range.
+	if (OtherComp && OtherComp->ComponentHasTag(FName("DetectionOnly")))
+	{
+		return;
+	}
+
+	// 2. ONLY PUNCH IF WE HIT A PENGUIN MESH
 	APenguinBase* HitPenguin = Cast<APenguinBase>(OtherActor);
 
-	// If penguin and not fighting somehting else, lock on to it and start the attack timer
+	// Only lock on if we hit a valid penguin and aren't already fighting
 	if (HitPenguin && !IsValid(CurrentDefenderTarget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Zombie bumped into a Penguin! Initiating combat lock-on."));
-		CurrentDefenderTarget = HitPenguin; // Lock on
-		AttackTimer = AttackCooldown; // Instantly trigger the first punch
+		UE_LOG(LogTemp, Warning, TEXT("Zombie engaged physical combat with: %s"), *HitPenguin->GetName());
+		CurrentDefenderTarget = HitPenguin;
+		AttackTimer = AttackCooldown;
 	}
 }
