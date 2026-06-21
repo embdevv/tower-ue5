@@ -2,6 +2,7 @@
 #include "TimerManager.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "TowerGameMode.h"
 
 AEnemySpawner::AEnemySpawner()
 {
@@ -54,7 +55,15 @@ void AEnemySpawner::SpawnEnemy()
 
 void AEnemySpawner::HandleEnemyReachedBase(float Damage, ATowerEnemyBase* Enemy)
 {
-	UE_LOG(LogTemp, Warning, TEXT("EVENT TRIGGERED: Base took %f damage"), Damage);
+	//Get the GameMode
+	ATowerGameMode* GM = Cast<ATowerGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
+	{
+		//Deal the damage
+		GM->TakePlayerDamage(Damage);
+	}
+
+	//Recycle the enemy
 	Enemy->DeactivateEnemy();
 }
 

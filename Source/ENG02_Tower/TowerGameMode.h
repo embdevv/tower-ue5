@@ -17,4 +17,13 @@ public:
 	// function enemies will call when they die
 	UFUNCTION(BlueprintCallable, Category = "Economy")
 	void AddCoins(int32 Amount);
+
+	// The Player Health variables
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats")
+	float PlayerHealth = 100.0f;
+
+	UFUNCTION(BlueprintCallable, Category = "Player Stats")
+	void TakePlayerDamage(float Damage);
+
+
 };
